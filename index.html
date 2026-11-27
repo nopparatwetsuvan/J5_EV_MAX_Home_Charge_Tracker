@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>J5 EV Max • Home Charge Tracker</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    };
+  </script>
   <!-- Chart.js for Monthly Cost & CO2 Visualizations -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Prompt Thai + Inter Typography -->
@@ -17,31 +22,58 @@
       color-scheme: dark;
     }
 
+    html:not(.dark) {
+      color-scheme: light;
+    }
+
     body {
       font-family: 'Prompt', 'Inter', sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.14), transparent 36%),
+        radial-gradient(circle at 88% 18%, rgba(56, 189, 248, 0.12), transparent 40%),
+        #f1f5f9;
+      color: #0f172a;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    html.dark body {
       background:
         radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.16), transparent 36%),
         radial-gradient(circle at 88% 18%, rgba(56, 189, 248, 0.14), transparent 40%),
         radial-gradient(circle at 50% 95%, rgba(20, 184, 166, 0.08), transparent 45%),
         #060d16;
       color: #e2e8f0;
-      min-height: 100vh;
-      overflow-x: hidden;
     }
 
-    /* Glassmorphic Automotive Surfaces */
+    /* Adaptive Glassmorphic Surfaces (Light + Dark) */
     .glass {
-      background: rgba(15, 23, 42, 0.72);
+      background: rgba(255, 255, 255, 0.84);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 14px 34px -16px rgba(15, 23, 42, 0.14);
+      transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    html.dark .glass {
+      background: rgba(15, 23, 42, 0.72);
       border: 1px solid rgba(148, 163, 184, 0.15);
       box-shadow: 0 14px 35px -15px rgba(0, 0, 0, 0.65);
     }
 
     .glass-strong {
-      background: rgba(15, 23, 42, 0.94);
+      background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      box-shadow: 0 24px 55px -15px rgba(15, 23, 42, 0.2);
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    html.dark .glass-strong {
+      background: rgba(15, 23, 42, 0.94);
       border: 1px solid rgba(16, 185, 129, 0.28);
       box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.85);
     }
@@ -64,11 +96,11 @@
       animation: pulseGlow 2.6s ease-in-out infinite;
       background-image: linear-gradient(
         -45deg,
-        rgba(255, 255, 255, 0.16) 25%,
+        rgba(255, 255, 255, 0.18) 25%,
         transparent 25%,
         transparent 50%,
-        rgba(255, 255, 255, 0.16) 50%,
-        rgba(255, 255, 255, 0.16) 75%,
+        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0.18) 75%,
         transparent 75%,
         transparent
       );
@@ -79,7 +111,7 @@
       animation: pulseGlow 2.6s ease-in-out infinite, chargeStripes 1.3s linear infinite;
     }
 
-    /* Hide spin buttons on SOC number inputs for clean automotive UI */
+    /* Hide spin buttons on SOC number inputs */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
       -webkit-appearance: none;
@@ -90,8 +122,8 @@
     }
   </style>
 </head>
-<body class="antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
-  <!-- Non-blocking Toast Banner Container (never uses alert() or confirm()) -->
+<body class="antialiased selection:bg-emerald-500/30 selection:text-emerald-700 dark:selection:text-emerald-200">
+  <!-- Non-blocking Toast Notification Container -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full px-4 sm:px-0 pointer-events-none"></div>
 
   <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
@@ -104,86 +136,170 @@
         </div>
         <div>
           <div class="flex flex-wrap items-center gap-2">
-            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               J5 EV Max • Home Charge Tracker
             </h1>
-            <span id="batBadge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            <span id="batBadge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
               50.6 kWh
             </span>
           </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             บันทึกการชาร์จไฟบ้าน • คำนวณค่าไฟ &amp; ลด CO₂ • สรุปรายเดือน • ทริคถนอมแบต
           </p>
         </div>
       </div>
 
-      <!-- Header Action Buttons -->
+      <!-- Header Action Buttons + Dark/Light Mode Switch -->
       <div class="flex flex-wrap items-center gap-2">
-        <span id="syncStatusPill" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-900/90 text-slate-300 border border-slate-700/80 flex items-center gap-1.5">
+        <span id="syncStatusPill" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80 flex items-center gap-1.5">
           <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-          <span id="syncStatusText">Local Only</span>
+          <span id="syncStatusText">กำลังเชื่อมต่อ...</span>
         </span>
 
-        <button type="button" onclick="pullFromSheet(true)" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer">
+        <!-- Light / Dark Mode Toggle Button -->
+        <button id="themeToggleBtn" type="button" onclick="toggleTheme()" title="สลับโหมดสว่าง / โหมดมืด" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1.5">
+          <span id="themeIcon">☀️</span>
+          <span id="themeLabel" class="hidden sm:inline">Light Mode</span>
+        </button>
+
+        <button type="button" onclick="pullFromSheet(true)" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition cursor-pointer">
           🔄 ซิงก์ Sheet
         </button>
 
-        <button type="button" onclick="openModal('settingsModal')" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
-          ⚙️ ตั้งค่าเรทไฟ
+        <button type="button" onclick="openModal('settingsModal')" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer">
+          ⚙️ ตั้งค่า
         </button>
 
-        <button type="button" onclick="openModal('syncModal')" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 transition cursor-pointer">
-          ☁️ เชื่อมต่อ Sheet &amp; GitHub
+        <button type="button" onclick="openModal('syncModal')" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 transition cursor-pointer">
+          ☁️ เชื่อมต่อ Sheet
         </button>
 
-        <button type="button" onclick="exportCSV()" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-400 hover:bg-emerald-300 text-slate-950 transition cursor-pointer">
-          ⬇️ Export CSV
+        <button type="button" onclick="exportCSV()" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-white dark:text-slate-950 transition cursor-pointer shadow-sm">
+          ⬇️ CSV
         </button>
       </div>
     </header>
 
+    <!-- VEHICLE HERO SHOWCASE BANNER (Google Drive Photo ID: 180tZ_Lb9Hun3yfpwZZu-FcHdHI_nD7m1) -->
+    <section class="glass rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+      <!-- Vehicle Photo Container (5 cols) -->
+      <div class="lg:col-span-5 relative min-h-[210px] sm:min-h-[240px] bg-gradient-to-br from-slate-200 via-emerald-100/60 to-cyan-100/60 dark:from-slate-900 dark:via-emerald-950/50 dark:to-cyan-950/50 flex items-center justify-center overflow-hidden">
+        <img
+          id="heroCarImg"
+          src="https://drive.google.com/thumbnail?id=180tZ_Lb9Hun3yfpwZZu-FcHdHI_nD7m1&sz=w1200"
+          alt="J5 EV Max Vehicle"
+          referrerpolicy="no-referrer"
+          onerror="handleHeroImgError(this)"
+          class="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
+        />
+        <!-- Fallback SVG Silhouette if Google Drive sharing blocks image embedding -->
+        <div id="heroCarFallback" class="hidden flex-col items-center justify-center p-6 text-center space-y-2">
+          <svg class="w-40 h-20 text-emerald-500 dark:text-emerald-400" viewBox="0 0 240 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M26 66H18C13.6 66 10 62.4 10 58V48C10 43.2 13.4 39.1 18.1 38.2L44 33L74 16C80.5 12.3 87.9 10.4 95.4 10.4H148C156.5 10.4 164.8 12.9 171.8 17.6L198 35L218 39C224.8 40.4 230 46.4 230 53.3V58C230 62.4 226.4 66 222 66H212" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M74 66H166" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="52" cy="68" r="16" stroke="currentColor" stroke-width="5"/>
+            <circle cx="52" cy="68" r="6" fill="currentColor"/>
+            <circle cx="188" cy="68" r="16" stroke="currentColor" stroke-width="5"/>
+            <circle cx="188" cy="68" r="6" fill="currentColor"/>
+            <path d="M116 24L108 38H122L114 52" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="text-xs font-medium text-slate-600 dark:text-slate-300">J5 EV Max • 50.6 kWh Edition</span>
+        </div>
+
+        <!-- Subtle Gradient Overlay Badge on Image -->
+        <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
+          <span class="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-950/75 text-emerald-300 backdrop-blur-md border border-emerald-400/30">
+            ⚡ J5 EV MAX • 50.6 kWh
+          </span>
+          <span id="heroTariffBadge" class="px-3 py-1 rounded-full text-[11px] font-medium bg-slate-950/75 text-cyan-200 backdrop-blur-md border border-white/15">
+            🏠 เรทปกติ / เหมาจ่าย
+          </span>
+        </div>
+      </div>
+
+      <!-- Vehicle & Quick Insight Summary (7 cols) -->
+      <div class="lg:col-span-7 p-5 sm:p-6 flex flex-col justify-between gap-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              🚗 My EV Garage
+            </span>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-1.5">
+              แดชบอร์ดบันทึกการชาร์จไฟบ้าน &amp; ดูแลสุขภาพแบตเตอรี่
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+              ซิงก์ตรงกับแท็บ <code class="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300">Charge_Log</code> (คอลัมน์ A–L) พร้อมคำนวณค่าไฟบ้านอัตโนมัติ
+            </p>
+          </div>
+          <button type="button" onclick="openModal('settingsModal')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">
+            🖼️ เปลี่ยนรูป / ตั้งค่า
+          </button>
+        </div>
+
+        <!-- Mini Spec & Rate Highlights -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="rounded-2xl bg-slate-100/90 dark:bg-slate-900/75 border border-slate-200/80 dark:border-slate-800 p-3">
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">ความจุแบตสุทธิ</div>
+            <div id="heroSpecCap" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-0.5">50.6 kWh</div>
+          </div>
+          <div class="rounded-2xl bg-slate-100/90 dark:bg-slate-900/75 border border-slate-200/80 dark:border-slate-800 p-3">
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">ค่าไฟเรทปกติ (Flat)</div>
+            <div id="heroSpecFlat" class="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-300 mt-0.5">฿4.40 / หน่วย</div>
+          </div>
+          <div class="rounded-2xl bg-slate-100/90 dark:bg-slate-900/75 border border-slate-200/80 dark:border-slate-800 p-3">
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">ชาร์จ 20% → 80%</div>
+            <div id="heroSpec80" class="text-sm sm:text-base font-bold text-cyan-600 dark:text-cyan-300 mt-0.5">~฿146.94</div>
+          </div>
+          <div class="rounded-2xl bg-slate-100/90 dark:bg-slate-900/75 border border-slate-200/80 dark:border-slate-800 p-3">
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">ชาร์จเต็ม 0% → 100%</div>
+            <div id="heroSpecFull" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-0.5">~฿244.90</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 4 KPI SUMMARY CARDS -->
     <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <div class="glass rounded-2xl p-5">
-        <div class="flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>ค่าไฟบ้านสะสม</span>
           <span class="text-base">💸</span>
         </div>
-        <div id="kpiCost" class="text-2xl sm:text-3xl font-bold text-white mt-2">฿0.00</div>
-        <div id="kpiCostSub" class="text-xs text-slate-400 mt-1.5">ชาร์จทั้งหมด 0 ครั้ง</div>
+        <div id="kpiCost" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-2">฿0.00</div>
+        <div id="kpiCostSub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">ชาร์จทั้งหมด 0 ครั้ง</div>
       </div>
 
       <div class="glass rounded-2xl p-5">
-        <div class="flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>พลังงานไฟรวม</span>
           <span class="text-base">🔋</span>
         </div>
-        <div id="kpiKwh" class="text-2xl sm:text-3xl font-bold text-white mt-2">
-          0.00 <span class="text-sm font-normal text-slate-400">kWh</span>
+        <div id="kpiKwh" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-2">
+          0.00 <span class="text-sm font-normal text-slate-500 dark:text-slate-400">kWh</span>
         </div>
-        <div id="kpiKwhSub" class="text-xs text-slate-400 mt-1.5">คิดจากแบต 50.6 kWh + Loss 10%</div>
+        <div id="kpiKwhSub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">คิดจากแบต 50.6 kWh + Loss 10%</div>
       </div>
 
       <div class="glass rounded-2xl p-5">
-        <div class="flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>ลดการปล่อย CO₂</span>
           <span class="text-base">🌱</span>
         </div>
-        <div id="kpiCo2" class="text-2xl sm:text-3xl font-bold text-emerald-300 mt-2">
-          0.00 <span class="text-sm font-normal text-slate-400">kg</span>
+        <div id="kpiCo2" class="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-300 mt-2">
+          0.00 <span class="text-sm font-normal text-slate-500 dark:text-slate-400">kg</span>
         </div>
-        <div id="kpiTrees" class="text-xs text-slate-400 mt-1.5">เทียบเท่าปลูกต้นไม้ ~0.0 ต้น/ปี</div>
+        <div id="kpiTrees" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">เทียบเท่าปลูกต้นไม้ ~0.00 ต้น/ปี</div>
       </div>
 
       <div class="glass rounded-2xl p-5">
-        <div class="flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>คะแนนถนอมแบตเฉลี่ย</span>
           <span class="text-base">💚</span>
         </div>
-        <div id="kpiScore" class="text-2xl sm:text-3xl font-bold text-white mt-2">
-          - <span class="text-sm font-normal text-slate-400">/ 100</span>
+        <div id="kpiScore" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-2">
+          - <span class="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
         </div>
-        <div id="kpiScoreSub" class="text-xs text-slate-400 mt-1.5">ยังไม่มีข้อมูลการชาร์จ</div>
+        <div id="kpiScoreSub" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">ยังไม่มีข้อมูลการชาร์จ</div>
       </div>
     </section>
 
@@ -194,10 +310,10 @@
       <div class="lg:col-span-7 glass rounded-3xl p-5 sm:p-6 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-lg font-semibold text-white">🔌 บันทึกรอบชาร์จไฟบ้าน</h2>
-            <p class="text-xs text-slate-400">กรอก % เริ่มต้นและ % สิ้นสุด ระบบคำนวณหน่วยไฟ ค่าไฟ และ CO₂ ทันที</p>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">🔌 บันทึกรอบชาร์จไฟบ้าน</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">กรอก % เริ่มต้นและ % สิ้นสุด ระบบคำนวณหน่วยไฟ ค่าไฟ และ CO₂ ทันที</p>
           </div>
-          <button type="button" onclick="seedSampleData()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition cursor-pointer">
+          <button type="button" onclick="seedSampleData()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">
             ✨ เติมข้อมูลตัวอย่าง
           </button>
         </div>
@@ -205,68 +321,68 @@
         <form id="chargeForm" onsubmit="handleAddCharge(event)" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label for="chargeDate" class="block text-xs text-slate-300 mb-1.5">วันที่ชาร์จ</label>
-              <input id="chargeDate" type="date" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-400" />
+              <label for="chargeDate" class="block text-xs text-slate-600 dark:text-slate-300 mb-1.5">วันที่ชาร์จ</label>
+              <input id="chargeDate" type="date" required class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400" />
             </div>
 
             <div>
-              <label for="startSoc" class="block text-xs text-slate-300 mb-1.5">แบตเริ่มต้น (%)</label>
-              <input id="startSoc" type="number" min="0" max="100" value="25" required oninput="updateLivePreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:border-emerald-400" />
+              <label for="startSoc" class="block text-xs text-slate-600 dark:text-slate-300 mb-1.5">แบตเริ่มต้น (%)</label>
+              <input id="startSoc" type="number" min="0" max="100" value="25" required oninput="updateLivePreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400" />
             </div>
 
             <div>
-              <label for="endSoc" class="block text-xs text-slate-300 mb-1.5">แบตสิ้นสุด (%)</label>
-              <input id="endSoc" type="number" min="0" max="100" value="80" required oninput="updateLivePreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:border-emerald-400" />
+              <label for="endSoc" class="block text-xs text-slate-600 dark:text-slate-300 mb-1.5">แบตสิ้นสุด (%)</label>
+              <input id="endSoc" type="number" min="0" max="100" value="80" required oninput="updateLivePreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400" />
             </div>
           </div>
 
           <!-- Quick Target & Step Buttons -->
           <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs text-slate-400 mr-1">ปุ่มลัด % สิ้นสุด:</span>
-            <button type="button" onclick="setQuickEnd(80)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 border border-slate-700 transition cursor-pointer">ไป 80%</button>
-            <button type="button" onclick="setQuickEnd(90)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 border border-slate-700 transition cursor-pointer">ไป 90%</button>
-            <button type="button" onclick="setQuickEnd(100)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 border border-slate-700 transition cursor-pointer">เต็ม 100%</button>
-            <button type="button" onclick="addQuickStep(15)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700 transition cursor-pointer">+15%</button>
-            <button type="button" onclick="addQuickStep(25)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700 transition cursor-pointer">+25%</button>
+            <span class="text-xs text-slate-500 dark:text-slate-400 mr-1">ปุ่มลัด % สิ้นสุด:</span>
+            <button type="button" onclick="setQuickEnd(80)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-emerald-500/20 hover:text-emerald-700 dark:bg-slate-800/90 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-300 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">ไป 80%</button>
+            <button type="button" onclick="setQuickEnd(90)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-emerald-500/20 hover:text-emerald-700 dark:bg-slate-800/90 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-300 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">ไป 90%</button>
+            <button type="button" onclick="setQuickEnd(100)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-emerald-500/20 hover:text-emerald-700 dark:bg-slate-800/90 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-300 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">เต็ม 100%</button>
+            <button type="button" onclick="addQuickStep(15)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-cyan-500/20 hover:text-cyan-700 dark:bg-slate-800/90 dark:hover:bg-cyan-500/20 dark:hover:text-cyan-300 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">+15%</button>
+            <button type="button" onclick="addQuickStep(25)" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-cyan-500/20 hover:text-cyan-700 dark:bg-slate-800/90 dark:hover:bg-cyan-500/20 dark:hover:text-cyan-300 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer">+25%</button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="tariffMode" class="block text-xs text-slate-300 mb-1.5">โหมดอัตราค่าไฟ</label>
-              <select id="tariffMode" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-400">
+              <label for="tariffMode" class="block text-xs text-slate-600 dark:text-slate-300 mb-1.5">โหมดอัตราค่าไฟ</label>
+              <select id="tariffMode" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400">
+                <option value="Flat" selected>🏠 เรทปกติ / เหมาจ่าย</option>
                 <option value="Off-Peak">🌙 TOU Off-Peak (ประหยัด)</option>
-                <option value="Flat">🏠 เรทปกติ / เหมาจ่าย</option>
                 <option value="On-Peak">☀️ TOU On-Peak</option>
               </select>
             </div>
 
             <div>
-              <label for="chargeNote" class="block text-xs text-slate-300 mb-1.5">โน้ตเพิ่มเติม (ไม่บังคับ)</label>
-              <input id="chargeNote" type="text" maxlength="120" placeholder="เช่น ชาร์จข้ามคืน / เตรียมออกทริป" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+              <label for="chargeNote" class="block text-xs text-slate-600 dark:text-slate-300 mb-1.5">โน้ตเพิ่มเติม (ไม่บังคับ)</label>
+              <input id="chargeNote" type="text" maxlength="120" placeholder="เช่น ชาร์จที่บ้าน / เตรียมออกทริป" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400" />
             </div>
           </div>
 
           <!-- Live Calculation Preview Strip -->
-          <div class="rounded-2xl bg-slate-900/85 border border-slate-800 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div class="rounded-2xl bg-slate-100/95 dark:bg-slate-900/85 border border-slate-200 dark:border-slate-800 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div>
-              <div class="text-[11px] text-slate-400">ชาร์จเพิ่ม</div>
-              <div id="prevPct" class="text-base font-bold text-emerald-300 mt-0.5">+55%</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">ชาร์จเพิ่ม</div>
+              <div id="prevPct" class="text-base font-bold text-emerald-600 dark:text-emerald-300 mt-0.5">+55%</div>
             </div>
             <div>
-              <div class="text-[11px] text-slate-400">ไฟรวม Loss</div>
-              <div id="prevKwh" class="text-base font-bold text-cyan-300 mt-0.5">30.61 kWh</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">ไฟรวม Loss</div>
+              <div id="prevKwh" class="text-base font-bold text-cyan-600 dark:text-cyan-300 mt-0.5">30.61 kWh</div>
             </div>
             <div>
-              <div class="text-[11px] text-slate-400">ค่าไฟโดยประมาณ</div>
-              <div id="prevCost" class="text-base font-bold text-white mt-0.5">฿90.30</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">ค่าไฟโดยประมาณ</div>
+              <div id="prevCost" class="text-base font-bold text-slate-900 dark:text-white mt-0.5">฿134.70</div>
             </div>
             <div>
-              <div class="text-[11px] text-slate-400">ลด CO₂</div>
-              <div id="prevCo2" class="text-base font-bold text-lime-300 mt-0.5">8.91 kg</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">ลด CO₂</div>
+              <div id="prevCo2" class="text-base font-bold text-lime-600 dark:text-lime-300 mt-0.5">8.91 kg</div>
             </div>
           </div>
 
-          <button type="submit" class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:brightness-105 active:scale-[0.99] text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/25 transition cursor-pointer">
+          <button type="submit" class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400 hover:brightness-105 active:scale-[0.99] text-white dark:text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/25 transition cursor-pointer">
             ➕ บันทึกรอบชาร์จนี้
           </button>
         </form>
@@ -277,28 +393,28 @@
         <!-- Animated Battery Level Simulator -->
         <div class="glass rounded-3xl p-5 sm:p-6 space-y-4">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-base font-semibold text-white">🔋 จำลองระดับแบตเตอรี่ (J5 EV Max)</h2>
-            <span id="liveHintBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            <h2 class="text-base font-semibold text-slate-900 dark:text-white">🔋 จำลองระดับแบตเตอรี่ (J5 EV Max)</h2>
+            <span id="liveHintBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
               Sweet Spot
             </span>
           </div>
 
           <div class="flex items-center gap-2">
-            <div class="flex-1 h-14 rounded-2xl bg-slate-950/90 border-2 border-slate-700 p-1.5 relative overflow-hidden flex items-center">
+            <div class="flex-1 h-14 rounded-2xl bg-slate-200/90 dark:bg-slate-950/90 border-2 border-slate-300 dark:border-slate-700 p-1.5 relative overflow-hidden flex items-center">
               <!-- Initial SOC block -->
-              <div id="barStart" class="h-full rounded-l-xl bg-slate-600/75 transition-all duration-300" style="width: 25%"></div>
+              <div id="barStart" class="h-full rounded-l-xl bg-slate-500/65 dark:bg-slate-600/75 transition-all duration-300" style="width: 25%"></div>
               <!-- Added Charge glowing block -->
-              <div id="barAdded" class="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 charge-glow is-animating transition-all duration-300" style="width: 55%"></div>
+              <div id="barAdded" class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 charge-glow is-animating transition-all duration-300" style="width: 55%"></div>
               <!-- SOC Overlay Labels -->
-              <div class="absolute inset-0 flex items-center justify-between px-3.5 text-xs font-semibold text-white drop-shadow pointer-events-none">
-                <span id="barStartLabel">เริ่ม 25%</span>
-                <span id="barEndLabel">จบ 80%</span>
+              <div class="absolute inset-0 flex items-center justify-between px-3.5 text-xs font-semibold text-slate-900 dark:text-white drop-shadow pointer-events-none">
+                <span id="barStartLabel" class="bg-white/75 dark:bg-slate-950/55 px-2 py-0.5 rounded-md">เริ่ม 25%</span>
+                <span id="barEndLabel" class="bg-white/75 dark:bg-slate-950/55 px-2 py-0.5 rounded-md">จบ 80%</span>
               </div>
             </div>
-            <div class="w-2.5 h-6 rounded-r-md bg-slate-600 shrink-0"></div>
+            <div class="w-2.5 h-6 rounded-r-md bg-slate-400 dark:bg-slate-600 shrink-0"></div>
           </div>
 
-          <p id="liveCareMessage" class="text-xs text-slate-300 leading-relaxed bg-slate-900/70 rounded-xl p-3 border border-slate-800/90">
+          <p id="liveCareMessage" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-100/90 dark:bg-slate-900/70 rounded-xl p-3 border border-slate-200 dark:border-slate-800/90">
             ช่วง 20%–80% เหมาะกับการใช้งานประจำวัน ช่วยลดความเครียดสะสมของเซลล์แบตเตอรี่ได้ดีครับ
           </p>
         </div>
@@ -307,55 +423,61 @@
         <div class="glass-strong rounded-3xl p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
           <div class="space-y-2">
             <div class="flex items-center justify-between gap-2">
-              <span id="tipCategory" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              <span id="tipCategory" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
                 💡 กฎ 20% - 80%
               </span>
               <div class="flex items-center gap-3 text-xs">
-                <button type="button" onclick="nextTip()" class="text-emerald-300 hover:text-emerald-200 underline cursor-pointer">
+                <button type="button" onclick="nextTip()" class="text-emerald-600 dark:text-emerald-300 hover:underline cursor-pointer">
                   ถัดไป →
                 </button>
-                <button type="button" onclick="randomTip()" class="text-cyan-300 hover:text-cyan-200 underline cursor-pointer">
+                <button type="button" onclick="randomTip()" class="text-cyan-600 dark:text-cyan-300 hover:underline cursor-pointer">
                   🎲 สุ่ม Tip
                 </button>
               </div>
             </div>
-            <h3 id="tipTitle" class="text-base font-semibold text-white pt-1">ชาร์จช่วง 20% - 80% สำหรับวันใช้งานทั่วไป</h3>
-            <p id="tipBody" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <h3 id="tipTitle" class="text-base font-semibold text-slate-900 dark:text-white pt-1">ชาร์จช่วง 20% - 80% สำหรับวันใช้งานทั่วไป</h3>
+            <p id="tipBody" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               ช่วยให้แบตเตอรี่ทำงานในย่านที่สบาย ลดความเครียดสะสมของเซลล์ และช่วยยืดอายุการใช้งานได้ยาวนานขึ้น
             </p>
           </div>
-          <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-3 flex items-center justify-between">
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-3 flex items-center justify-between">
             <span>เคล็ดลับไฟบ้านสำหรับ J5 EV Max</span>
-            <span id="tipIndexLabel" class="font-mono text-slate-500">1 / 6</span>
+            <span id="tipIndexLabel" class="font-mono text-slate-400 dark:text-slate-500">1 / 6</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- MONTHLY CHARTS SECTION -->
+    <!-- UPGRADED MONTHLY CHARTS SECTION -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Gradient Monthly Cost Bar Chart -->
       <div class="glass rounded-3xl p-5 sm:p-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-base font-semibold text-white">📊 ค่าไฟชาร์จรายเดือน (บาท)</h2>
-            <p class="text-xs text-slate-400">สรุปยอดค่าไฟบ้านแยกตามเดือน</p>
+            <h2 class="text-base font-semibold text-slate-900 dark:text-white">📊 ค่าไฟชาร์จรายเดือน (บาท)</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">กราฟแท่งไล่เฉดสี แสดงยอดค่าไฟรวมและจำนวนครั้งต่อเดือน</p>
           </div>
-          <span class="text-xs font-medium text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">Bar Chart</span>
+          <span id="chartCostTotalBadge" class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30">
+            รวม ฿0.00
+          </span>
         </div>
-        <div class="h-64">
+        <div class="h-68 sm:h-72">
           <canvas id="costChart"></canvas>
         </div>
       </div>
 
+      <!-- Smooth Gradient Area CO2 Chart -->
       <div class="glass rounded-3xl p-5 sm:p-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h2 class="text-base font-semibold text-white">🌿 ปริมาณ CO₂ ที่ลดได้รายเดือน (kg)</h2>
-            <p class="text-xs text-slate-400">คำนวณจากหน่วยไฟที่เติมในแต่ละเดือน</p>
+            <h2 class="text-base font-semibold text-slate-900 dark:text-white">🌿 ปริมาณ CO₂ ที่ลดได้รายเดือน (kg)</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">กราฟพื้นที่โค้งนุ่มนวล เทียบเท่าจำนวนต้นไม้ที่ช่วยโลก</p>
           </div>
-          <span class="text-xs font-medium text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">Line Chart</span>
+          <span id="chartCo2TotalBadge" class="text-xs font-semibold text-cyan-700 dark:text-cyan-300 bg-cyan-500/15 px-3 py-1 rounded-full border border-cyan-500/30">
+            รวม 0.00 kg
+          </span>
         </div>
-        <div class="h-64">
+        <div class="h-68 sm:h-72">
           <canvas id="co2Chart"></canvas>
         </div>
       </div>
@@ -365,15 +487,15 @@
     <section class="glass rounded-3xl p-5 sm:p-6 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 class="text-lg font-semibold text-white">📋 ประวัติการชาร์จไฟบ้าน (Charge_Log)</h2>
-          <p class="text-xs text-slate-400">ข้อมูลบันทึกรายครั้ง เรียงจากล่าสุดไปเก่าสุด</p>
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">📋 ประวัติการชาร์จไฟบ้าน (Charge_Log)</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">ข้อมูลบันทึกรายครั้ง เรียงจากล่าสุดไปเก่าสุด</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <select id="monthFilter" onchange="renderAll()" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-emerald-400">
+          <select id="monthFilter" onchange="renderAll()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400">
             <option value="ALL">ทุกเดือน</option>
           </select>
-          <button type="button" onclick="clearAllLogs()" class="px-3 py-2 rounded-xl text-xs font-medium bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition cursor-pointer">
-            🗑️ ล้างประวัติทั้งหมด
+          <button type="button" onclick="clearLocalLogs()" class="px-3 py-2 rounded-xl text-xs font-medium bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition cursor-pointer">
+            🗑️ ล้างแคชในเครื่อง
           </button>
         </div>
       </div>
@@ -381,7 +503,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="border-b border-slate-800 text-xs text-slate-400">
+            <tr class="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
               <th class="py-3 px-3">วันที่</th>
               <th class="py-3 px-3">ระดับแบต</th>
               <th class="py-3 px-3">เพิ่ม</th>
@@ -394,9 +516,9 @@
               <th class="py-3 px-3 text-right">ลบ</th>
             </tr>
           </thead>
-          <tbody id="logTableBody" class="divide-y divide-slate-800/70 text-xs sm:text-sm">
+          <tbody id="logTableBody" class="divide-y divide-slate-200/80 dark:divide-slate-800/70 text-xs sm:text-sm">
             <tr>
-              <td colspan="10" class="py-10 text-center text-slate-400">
+              <td colspan="10" class="py-10 text-center text-slate-500 dark:text-slate-400">
                 ยังไม่มีข้อมูลการชาร์จใน Charge_Log — ลองกรอกฟอร์มด้านบน หรือกด "✨ เติมข้อมูลตัวอย่าง" เพื่อทดสอบได้เลย
               </td>
             </tr>
@@ -406,122 +528,139 @@
     </section>
   </div>
 
-  <!-- MODAL 1: BATTERY CAPACITY, LOSS, TARIFF RATES & CO2 FACTOR -->
-  <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass-strong rounded-3xl max-w-md w-full p-6 space-y-4">
+  <!-- MODAL 1: BATTERY CAPACITY, LOSS, TARIFF RATES, CO2 FACTOR & DRIVE IMAGE ID -->
+  <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-strong rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold text-white">⚙️ ตั้งค่ารถและอัตราค่าไฟ</h3>
-        <button type="button" onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-white text-xl leading-none cursor-pointer">&times;</button>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">⚙️ ตั้งค่ารถ อัตราค่าไฟ และรูปภาพ</h3>
+        <button type="button" onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xl leading-none cursor-pointer">&times;</button>
       </div>
       <div class="space-y-3 text-xs sm:text-sm">
         <div>
-          <label for="cfgCapacity" class="block text-slate-300 mb-1">ความจุแบตเตอรี่สุทธิ (kWh)</label>
-          <input id="cfgCapacity" type="number" step="0.1" min="1" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white" />
+          <label for="cfgCapacity" class="block text-slate-600 dark:text-slate-300 mb-1">ความจุแบตเตอรี่สุทธิ (kWh)</label>
+          <input id="cfgCapacity" type="number" step="0.1" min="1" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white" />
         </div>
         <div>
-          <label for="cfgLossPct" class="block text-slate-300 mb-1">เผื่อ Charging Loss ไฟบ้าน (%)</label>
-          <input id="cfgLossPct" type="number" step="1" min="0" max="40" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white" />
+          <label for="cfgLossPct" class="block text-slate-600 dark:text-slate-300 mb-1">เผื่อ Charging Loss ไฟบ้าน (%)</label>
+          <input id="cfgLossPct" type="number" step="1" min="0" max="40" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white" />
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div>
-            <label for="cfgOffPeak" class="block text-slate-300 mb-1 text-xs">Off-Peak (฿)</label>
-            <input id="cfgOffPeak" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white" />
+            <label for="cfgFlat" class="block text-slate-600 dark:text-slate-300 mb-1 text-xs">ปกติ Flat (฿)</label>
+            <input id="cfgFlat" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white" />
           </div>
           <div>
-            <label for="cfgFlat" class="block text-slate-300 mb-1 text-xs">ปกติ Flat (฿)</label>
-            <input id="cfgFlat" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white" />
+            <label for="cfgOffPeak" class="block text-slate-600 dark:text-slate-300 mb-1 text-xs">Off-Peak (฿)</label>
+            <input id="cfgOffPeak" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white" />
           </div>
           <div>
-            <label for="cfgOnPeak" class="block text-slate-300 mb-1 text-xs">On-Peak (฿)</label>
-            <input id="cfgOnPeak" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white" />
+            <label for="cfgOnPeak" class="block text-slate-600 dark:text-slate-300 mb-1 text-xs">On-Peak (฿)</label>
+            <input id="cfgOnPeak" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white" />
           </div>
         </div>
         <div>
-          <label for="cfgCo2Factor" class="block text-slate-300 mb-1">ตัวคูณลด CO₂ (kg CO₂ / kWh)</label>
-          <input id="cfgCo2Factor" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white" />
+          <label for="cfgCo2Factor" class="block text-slate-600 dark:text-slate-300 mb-1">ตัวคูณลด CO₂ (kg CO₂ / kWh)</label>
+          <input id="cfgCo2Factor" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white" />
+        </div>
+        <div>
+          <label for="cfgDriveImgId" class="block text-slate-600 dark:text-slate-300 mb-1">Google Drive Image ID (รูปรถตกแต่ง)</label>
+          <input id="cfgDriveImgId" type="text" placeholder="180tZ_Lb9Hun3yfpwZZu-FcHdHI_nD7m1" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white" />
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">ตั้งค่าไฟล์ใน Google Drive เป็น "ทุกคนที่มีลิงก์ดูได้" เพื่อให้รูปขึ้นครบทุกเครื่อง</p>
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModal('settingsModal')" class="px-4 py-2 rounded-xl text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer">ยกเลิก</button>
-        <button type="button" onclick="saveSettings()" class="px-4 py-2 rounded-xl text-xs bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-semibold cursor-pointer">บันทึกการตั้งค่า</button>
+        <button type="button" onclick="closeModal('settingsModal')" class="px-4 py-2 rounded-xl text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer">ยกเลิก</button>
+        <button type="button" onclick="saveSettings()" class="px-4 py-2 rounded-xl text-xs bg-emerald-500 hover:bg-emerald-400 text-white dark:text-slate-950 font-semibold cursor-pointer">บันทึกการตั้งค่า</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 2: GITHUB PAGES & GOOGLE APPS SCRIPT SHEET SYNC -->
-  <div id="syncModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <!-- MODAL 2: GOOGLE SHEET SYNC (12-COLUMN ALIGNED) -->
+  <div id="syncModal" class="fixed inset-0 z-50 hidden bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass-strong rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold text-white">☁️ เชื่อมต่อ Google Sheet &amp; GitHub Pages</h3>
-        <button type="button" onclick="closeModal('syncModal')" class="text-slate-400 hover:text-white text-xl leading-none cursor-pointer">&times;</button>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">☁️ เชื่อมต่อ Google Sheet (ตรงช่อง A–L)</h3>
+        <button type="button" onclick="closeModal('syncModal')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xl leading-none cursor-pointer">&times;</button>
       </div>
 
-      <div class="text-xs text-slate-300 space-y-1.5 bg-slate-900/75 p-3.5 rounded-2xl border border-slate-800">
+      <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 bg-slate-100/90 dark:bg-slate-900/75 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
         <div>
-          Google Sheet ID: <code class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300">1QISYTMlOtz7o5gJ9_zHw-MizBYKtHTnyIWdwrSUc59E</code>
+          Google Sheet ID: <code class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300">1QISYTMlOtz7o5gJ9_zHw-MizBYKtHTnyIWdwrSUc59E</code>
         </div>
-        <p class="text-slate-400 leading-relaxed">
-          1) เปิดชีทแล้วไปที่ <strong class="text-slate-200">Extensions &gt; Apps Script</strong> วางโค้ดด้านล่าง แล้วกด <strong class="text-slate-200">Deploy &gt; New deployment &gt; Web app</strong> (Execute as: Me, Who has access: Anyone)<br />
-          2) นำ Web App URL (<code class="text-cyan-300">.../exec</code>) มาวางด้านล่าง แล้วอัปไฟล์ <code class="text-emerald-300">index.html</code> ขึ้น GitHub Pages
+        <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+          โค้ด Apps Script ด้านล่างเขียนข้อมูลลงคอลัมน์ <strong class="text-slate-800 dark:text-slate-200">A ถึง L (12 ช่อง)</strong> ของแท็บ <code class="text-emerald-700 dark:text-emerald-300">Charge_Log</code> ตรงหัวตารางเป๊ะๆ (ไม่เยื้อง)
         </p>
       </div>
 
       <div>
-        <label for="cfgWebhookUrl" class="block text-xs text-slate-300 mb-1">Google Apps Script Web App URL</label>
-        <input id="cfgWebhookUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-cyan-400" />
+        <label for="cfgWebhookUrl" class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Google Apps Script Web App URL</label>
+        <input id="cfgWebhookUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400" />
       </div>
 
       <div>
-        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span>โค้ด Google Apps Script (รองรับทั้ง doGet และ doPost)</span>
-          <button type="button" onclick="copyAppsScript()" class="text-cyan-300 hover:text-cyan-200 underline cursor-pointer">คัดลอกโค้ด</button>
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+          <span>โค้ด Google Apps Script (เขียนลง A:L ตรงช่อง)</span>
+          <button type="button" onclick="copyAppsScript()" class="text-cyan-600 dark:text-cyan-300 hover:underline cursor-pointer">คัดลอกโค้ด</button>
         </div>
-        <pre id="appsScriptSnippet" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-emerald-300 overflow-x-auto leading-relaxed">const SHEET_ID = '1QISYTMlOtz7o5gJ9_zHw-MizBYKtHTnyIWdwrSUc59E';
+        <pre id="appsScriptSnippet" class="p-3.5 rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 text-[11px] font-mono text-emerald-300 overflow-x-auto leading-relaxed">const SHEET_ID = '1QISYTMlOtz7o5gJ9_zHw-MizBYKtHTnyIWdwrSUc59E';
 const SHEET_NAME = 'Charge_Log';
-const HEADERS = [
-  'id', 'date', 'monthKey', 'startSoc', 'endSoc', 'addedPct',
-  'netKwh', 'grossKwh', 'tariffMode', 'cost', 'co2Saved', 'score', 'note'
-];
 
-function getSheet_() {
+function getTargetSheet_() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sh = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
-  if (sh.getLastRow() === 0) sh.appendRow(HEADERS);
-  return sh;
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) throw new Error('ไม่พบแท็บชื่อ ' + SHEET_NAME);
+  return sheet;
 }
 
-function jsonOut_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
+function jsonResponse_(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function findFirstEmptyLogRow_(sheet) {
+  const startRow = 5;
+  const maxCheck = Math.max(sheet.getLastRow() + 1, 200);
+  const colA = sheet.getRange(startRow, 1, maxCheck - startRow + 1, 1).getValues();
+  for (let i = 0; i &lt; colA.length; i++) {
+    if (colA[i][0] === '' || colA[i][0] === null) return startRow + i;
+  }
+  return maxCheck + 1;
 }
 
 function doGet(e) {
   try {
-    const sh = getSheet_();
-    const lastRow = sh.getLastRow();
-    const lastCol = sh.getLastColumn();
-    if (lastRow &lt;= 1) return jsonOut_({ ok: true, logs: [] });
-    const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
-    const rows = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
-    const logs = rows
-      .filter(r =&gt; r.some(c =&gt; c !== '' &amp;&amp; c !== null))
-      .map((r, idx) =&gt; {
-        const item = {};
-        headers.forEach((h, i) =&gt; {
-          if (!h) return;
-          let val = r[i];
-          if (h === 'date' &amp;&amp; Object.prototype.toString.call(val) === '[object Date]' &amp;&amp; !isNaN(val)) {
-            val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-          }
-          item[h] = val;
-        });
-        if (!item.id) item.id = 'row-' + (idx + 2);
-        if (!item.monthKey &amp;&amp; item.date) item.monthKey = String(item.date).slice(0, 7);
-        return item;
+    const sheet = getTargetSheet_();
+    const lastRow = sheet.getLastRow();
+    if (lastRow &lt; 5) return jsonResponse_({ ok: true, logs: [] });
+    const rows = sheet.getRange(5, 1, lastRow - 4, 12).getValues();
+    const logs = [];
+    rows.forEach((r, idx) =&gt; {
+      const rowNum = idx + 5;
+      if (!r[0] &amp;&amp; !r[1] &amp;&amp; !r[2]) return;
+      const dateStr = Object.prototype.toString.call(r[0]) === '[object Date]' &amp;&amp; !isNaN(r[0])
+        ? Utilities.formatDate(r[0], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+        : String(r[0] || '').slice(0, 10);
+      logs.push({
+        id: 'row-' + rowNum,
+        rowNum,
+        date: dateStr,
+        startSoc: Number(r[1]) || 0,
+        endSoc: Number(r[2]) || 0,
+        addedPct: r[3] !== '' ? Number(r[3]) : Math.max(0, (Number(r[2]) || 0) - (Number(r[1]) || 0)),
+        netKwh: Number(r[4]) || 0,
+        grossKwh: Number(r[5]) || 0,
+        tariffMode: String(r[6] || 'Flat'),
+        cost: Number(r[7]) || 0,
+        co2Saved: Number(r[8]) || 0,
+        score: Number(r[9]) || 85,
+        monthKey: String(r[10] || dateStr.slice(0, 7)),
+        note: String(r[11] || '')
       });
-    return jsonOut_({ ok: true, logs });
+    });
+    return jsonResponse_({ ok: true, logs });
   } catch (err) {
-    return jsonOut_({ ok: false, error: err.message });
+    return jsonResponse_({ ok: false, error: err.message });
   }
 }
 
@@ -529,30 +668,31 @@ function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
-    const sh = getSheet_();
-    const data = e &amp;&amp; e.postData &amp;&amp; e.postData.contents ? JSON.parse(e.postData.contents) : {};
-
-    if (data.action === 'delete' &amp;&amp; data.id) {
-      const lastRow = sh.getLastRow();
-      if (lastRow &gt; 1) {
-        const ids = sh.getRange(2, 1, lastRow - 1, 1).getValues().flat();
-        const foundIdx = ids.findIndex(v =&gt; String(v) === String(data.id));
-        if (foundIdx !== -1) sh.deleteRow(foundIdx + 2);
-      }
-      return jsonOut_({ ok: true, deletedId: data.id });
+    const sheet = getTargetSheet_();
+    const body = e &amp;&amp; e.postData &amp;&amp; e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    if (body.action === 'delete' &amp;&amp; body.rowNum &amp;&amp; Number(body.rowNum) &gt;= 5) {
+      sheet.getRange(Number(body.rowNum), 1, 1, 12).clearContent();
+      return jsonResponse_({ ok: true, deleted: true });
     }
-
-    if (data.action === 'clearAll') {
-      const lastRow = sh.getLastRow();
-      if (lastRow &gt; 1) sh.deleteRows(2, lastRow - 1);
-      return jsonOut_({ ok: true, cleared: true });
-    }
-
-    const row = HEADERS.map(k =&gt; data[k] !== undefined ? data[k] : '');
-    sh.appendRow(row);
-    return jsonOut_({ ok: true, id: data.id || '' });
+    const targetRow = findFirstEmptyLogRow_(sheet);
+    const dateVal = body.date ? new Date(body.date + 'T00:00:00') : new Date();
+    sheet.getRange(targetRow, 1, 1, 12).setValues([[
+      dateVal,
+      Number(body.startSoc) || 0,
+      Number(body.endSoc) || 0,
+      Number(body.addedPct) || 0,
+      Number(body.netKwh) || 0,
+      Number(body.grossKwh) || 0,
+      String(body.tariffMode || 'Flat'),
+      Number(body.cost) || 0,
+      Number(body.co2Saved) || 0,
+      Number(body.score) || 85,
+      String(body.monthKey || String(body.date || '').slice(0, 7)),
+      String(body.note || '')
+    ]]);
+    return jsonResponse_({ ok: true, rowNum: targetRow });
   } catch (err) {
-    return jsonOut_({ ok: false, error: err.message });
+    return jsonResponse_({ ok: false, error: err.message });
   } finally {
     lock.releaseLock();
   }
@@ -560,27 +700,33 @@ function doPost(e) {
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModal('syncModal')" class="px-4 py-2 rounded-xl text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer">ปิด</button>
-        <button type="button" onclick="saveWebhookAndSync()" class="px-4 py-2 rounded-xl text-xs bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-semibold cursor-pointer">บันทึก &amp; ดึงข้อมูลจาก Sheet</button>
+        <button type="button" onclick="closeModal('syncModal')" class="px-4 py-2 rounded-xl text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer">ปิด</button>
+        <button type="button" onclick="saveWebhookAndSync()" class="px-4 py-2 rounded-xl text-xs bg-cyan-500 hover:bg-cyan-400 text-white dark:text-slate-950 font-semibold cursor-pointer">บันทึก &amp; ดึงข้อมูลจาก Sheet</button>
       </div>
     </div>
   </div>
 
   <script>
     const TARGET_SHEET_ID = '1QISYTMlOtz7o5gJ9_zHw-MizBYKtHTnyIWdwrSUc59E';
-    const STORAGE_KEY_LOGS = 'j5_ev_max_charge_logs_v3';
-    const STORAGE_KEY_CFG = 'j5_ev_max_charge_cfg_v3';
+    const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxykXU6HfsoJvUfOoJyMcV31hah00jTtpV8D6G-41tNDaGeCdZtzC1PkQoBR61zHwrI/exec';
+    const DEFAULT_DRIVE_IMG_ID = '180tZ_Lb9Hun3yfpwZZu-FcHdHI_nD7m1';
+
+    const STORAGE_KEY_LOGS = 'j5_ev_max_charge_logs_v4';
+    const STORAGE_KEY_CFG = 'j5_ev_max_charge_cfg_v4';
+    const STORAGE_KEY_THEME = 'j5_ev_max_theme_v1';
 
     const DEFAULT_CFG = {
       capacityKwh: 50.6,
       lossRate: 0.10,
+      defaultTariff: 'Flat',
       rates: {
-        'Off-Peak': 2.95,
         'Flat': 4.40,
+        'Off-Peak': 2.95,
         'On-Peak': 6.20
       },
       co2Factor: 0.32,
-      webhookUrl: ''
+      driveImgId: DEFAULT_DRIVE_IMG_ID,
+      webhookUrl: DEFAULT_WEBHOOK_URL
     };
 
     const BATTERY_TIPS = [
@@ -590,9 +736,9 @@ function doPost(e) {
         body: 'ช่วยให้แบตเตอรี่ทำงานในย่านที่สบาย ลดความเครียดสะสมของเซลล์ และช่วยยืดอายุการใช้งานได้ยาวนานขึ้น'
       },
       {
-        cat: '🌙 ประหยัดค่าไฟ',
-        title: 'ตั้งเวลาชาร์จช่วง Off-Peak',
-        body: 'หากใช้มิเตอร์ TOU การตั้งเวลาชาร์จช่วง Off-Peak จะช่วยลดค่าไฟบ้านต่อรอบได้ชัดเจนเมื่อเทียบกับเรทปกติหรือ On-Peak'
+        cat: '🏠 เรทไฟบ้าน',
+        title: 'คำนวณค่าไฟบ้านตามเรทปกติ / เหมาจ่ายแม่นยำ',
+        body: 'สำหรับบ้านที่ใช้มิเตอร์ปกติ สามารถปรับตัวเลขค่าไฟต่อหน่วย (รวมค่า Ft และ VAT) ในปุ่มตั้งค่าให้ตรงกับบิลจริงได้เลย'
       },
       {
         cat: '🌡️ อุณหภูมิแบต',
@@ -617,17 +763,76 @@ function doPost(e) {
     ];
 
     let config = loadConfig();
-    let logs = loadLogs(); // Starts empty by default
+    let logs = loadLogs();
     let tipIndex = 0;
     let costChartInstance = null;
     let co2ChartInstance = null;
 
+    // --- THEME MANAGEMENT (LIGHT / DARK MODE) ---
+    function isDarkMode() {
+      return document.documentElement.classList.contains('dark');
+    }
+
+    function applyTheme(theme) {
+      const dark = theme !== 'light';
+      document.documentElement.classList.toggle('dark', dark);
+      localStorage.setItem(STORAGE_KEY_THEME, dark ? 'dark' : 'light');
+
+      const icon = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      if (icon && label) {
+        icon.textContent = dark ? '☀️' : '🌙';
+        label.textContent = dark ? 'Light Mode' : 'Dark Mode';
+      }
+      renderCharts();
+    }
+
+    function toggleTheme() {
+      applyTheme(isDarkMode() ? 'light' : 'dark');
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(STORAGE_KEY_THEME);
+      applyTheme(saved || 'dark');
+    }
+
+    // --- GOOGLE DRIVE HERO IMAGE HANDLER ---
+    function applyHeroImage() {
+      const img = document.getElementById('heroCarImg');
+      const fallback = document.getElementById('heroCarFallback');
+      const id = (config.driveImgId || DEFAULT_DRIVE_IMG_ID).trim();
+      if (!img) return;
+      img.dataset.attempt = '0';
+      img.classList.remove('hidden');
+      if (fallback) fallback.classList.add('hidden');
+      img.src = `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`;
+    }
+
+    function handleHeroImgError(imgEl) {
+      const id = (config.driveImgId || DEFAULT_DRIVE_IMG_ID).trim();
+      const attempt = Number(imgEl.dataset.attempt || 0);
+      if (attempt === 0) {
+        imgEl.dataset.attempt = '1';
+        imgEl.src = `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}`;
+      } else {
+        imgEl.classList.add('hidden');
+        const fallback = document.getElementById('heroCarFallback');
+        if (fallback) {
+          fallback.classList.remove('hidden');
+          fallback.classList.add('flex');
+        }
+      }
+    }
+
+    // --- CONFIG & LOGS PERSISTENCE ---
     function cloneDefaultCfg() {
       return {
         capacityKwh: DEFAULT_CFG.capacityKwh,
         lossRate: DEFAULT_CFG.lossRate,
+        defaultTariff: DEFAULT_CFG.defaultTariff,
         rates: { ...DEFAULT_CFG.rates },
         co2Factor: DEFAULT_CFG.co2Factor,
+        driveImgId: DEFAULT_CFG.driveImgId,
         webhookUrl: DEFAULT_CFG.webhookUrl
       };
     }
@@ -680,9 +885,9 @@ function doPost(e) {
       const container = document.getElementById('toastContainer');
       if (!container) return;
       const styles = {
-        success: 'text-emerald-200 border-emerald-400/50',
-        error: 'text-rose-200 border-rose-400/50',
-        info: 'text-cyan-200 border-cyan-400/40'
+        success: 'text-emerald-700 dark:text-emerald-200 border-emerald-500/50',
+        error: 'text-rose-700 dark:text-rose-200 border-rose-500/50',
+        info: 'text-cyan-700 dark:text-cyan-200 border-cyan-500/40'
       };
       const icons = { success: '✅', error: '⚠️', info: 'ℹ️' };
 
@@ -720,7 +925,7 @@ function doPost(e) {
       const addedPct = Math.max(0, e - s);
       const netKwh = (addedPct / 100) * Number(config.capacityKwh);
       const grossKwh = netKwh * (1 + Number(config.lossRate));
-      const unitRate = config.rates[tariffMode] ?? config.rates['Off-Peak'];
+      const unitRate = config.rates[tariffMode] ?? config.rates['Flat'];
       const cost = grossKwh * Number(unitRate);
       const co2Saved = netKwh * Number(config.co2Factor);
 
@@ -743,6 +948,14 @@ function doPost(e) {
       document.getElementById('prevCost').textContent = `฿${m.cost.toFixed(2)}`;
       document.getElementById('prevCo2').textContent = `${m.co2Saved.toFixed(2)} kg`;
 
+      const modeLabels = {
+        'Flat': '🏠 เรทปกติ / เหมาจ่าย',
+        'Off-Peak': '🌙 TOU Off-Peak',
+        'On-Peak': '☀️ TOU On-Peak'
+      };
+      const heroTariff = document.getElementById('heroTariffBadge');
+      if (heroTariff) heroTariff.textContent = modeLabels[mode] || mode;
+
       const clampedStart = Math.max(0, Math.min(100, s));
       const clampedEnd = Math.max(clampedStart, Math.min(100, e));
       const addedWidth = clampedEnd - clampedStart;
@@ -756,15 +969,15 @@ function doPost(e) {
       const msg = document.getElementById('liveCareMessage');
       if (clampedEnd > 90) {
         badge.textContent = 'Over 90% • เต็มสูง';
-        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30';
         msg.textContent = 'ชาร์จสูงกว่า 90% เหมาะกับวันที่ต้องเดินทางไกล — แนะนำให้ออกเดินทางใช้งานต่อเลย ไม่ควรจอดแช่แบตเต็มไว้นานครับ';
       } else if (clampedStart < 15) {
         badge.textContent = 'Low Battery • แบตต่ำ';
-        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30';
         msg.textContent = 'แบตเตอรี่เริ่มต้นต่ำกว่า 15% คราวหน้าลองเสียบชาร์จเร็วขึ้นอีกนิดเพื่อช่วยถนอมเซลล์แบตเตอรี่ครับ';
       } else {
         badge.textContent = 'Sweet Spot';
-        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30';
         msg.textContent = 'ช่วง 20%–80% เหมาะกับการใช้งานประจำวัน ช่วยลดความเครียดสะสมของเซลล์แบตเตอรี่ได้ดีครับ';
       }
     }
@@ -784,6 +997,7 @@ function doPost(e) {
       updateLivePreview();
     }
 
+    // --- GOOGLE SHEET SYNC (12-COLUMN ALIGNED) ---
     async function pullFromSheet(notify = false) {
       if (!config.webhookUrl) {
         setSyncBadge('local', 'Local Only');
@@ -799,7 +1013,8 @@ function doPost(e) {
           throw new Error(data.error || 'รูปแบบข้อมูลไม่ถูกต้อง');
         }
         logs = data.logs.map((row, idx) => ({
-          id: String(row.id || `sheet-${idx + 1}`),
+          id: String(row.id || `row-${idx + 5}`),
+          rowNum: row.rowNum ? Number(row.rowNum) : null,
           date: String(row.date || '').slice(0, 10),
           monthKey: String(row.monthKey || String(row.date || '').slice(0, 7)),
           startSoc: Number(row.startSoc) || 0,
@@ -807,7 +1022,7 @@ function doPost(e) {
           addedPct: Number(row.addedPct) || 0,
           netKwh: Number(row.netKwh) || 0,
           grossKwh: Number(row.grossKwh) || 0,
-          tariffMode: String(row.tariffMode || 'Off-Peak'),
+          tariffMode: String(row.tariffMode || 'Flat'),
           cost: Number(row.cost) || 0,
           co2Saved: Number(row.co2Saved) || 0,
           score: Number(row.score) || 85,
@@ -885,39 +1100,38 @@ function doPost(e) {
 
       if (config.webhookUrl) {
         await postToSheet(entry);
+        setTimeout(() => pullFromSheet(false), 1200);
       }
     }
 
     async function deleteLog(id) {
-      logs = logs.filter(item => item.id !== id);
+      const target = logs.find(item => String(item.id) === String(id));
+      logs = logs.filter(item => String(item.id) !== String(id));
       saveLogsToStorage();
       renderAll();
       showToast('ลบรายการชาร์จแล้วครับ', 'info');
-      if (config.webhookUrl) {
-        await postToSheet({ action: 'delete', id });
+      if (config.webhookUrl && target && target.rowNum) {
+        await postToSheet({ action: 'delete', rowNum: target.rowNum });
       }
     }
 
-    async function clearAllLogs() {
+    function clearLocalLogs() {
       if (!logs.length) {
-        showToast('ยังไม่มีข้อมูลให้ล้างครับ', 'info');
+        showToast('ยังไม่มีข้อมูลแคชในเครื่องครับ', 'info');
         return;
       }
       logs = [];
       saveLogsToStorage();
       renderAll();
-      showToast('ล้างประวัติทั้งหมดแล้วครับ', 'info');
-      if (config.webhookUrl) {
-        await postToSheet({ action: 'clearAll' });
-      }
+      showToast('ล้างแคชในเครื่องแล้ว (ข้อมูลใน Google Sheet ยังอยู่ครบ)', 'info');
     }
 
     async function seedSampleData() {
       const samples = [
-        { date: '2026-11-03', startSoc: 28, endSoc: 80, tariffMode: 'Off-Peak', note: 'เสียบชาร์จข้ามคืน' },
-        { date: '2026-11-09', startSoc: 34, endSoc: 85, tariffMode: 'Off-Peak', note: 'วิ่งในเมืองชิลๆ' },
-        { date: '2026-11-16', startSoc: 20, endSoc: 80, tariffMode: 'Flat', note: 'ชาร์จช่วงบ่ายวันหยุด' },
-        { date: '2026-11-22', startSoc: 30, endSoc: 90, tariffMode: 'Off-Peak', note: 'เตรียมตัวเดินทางไกล' }
+        { date: '2026-10-12', startSoc: 30, endSoc: 80, tariffMode: 'Flat', note: 'ชาร์จไฟบ้านเรทปกติ' },
+        { date: '2026-10-25', startSoc: 22, endSoc: 85, tariffMode: 'Flat', note: 'เติมไฟก่อนทำงาน' },
+        { date: '2026-11-08', startSoc: 28, endSoc: 80, tariffMode: 'Flat', note: 'เสียบชาร์จที่บ้าน' },
+        { date: '2026-11-22', startSoc: 25, endSoc: 90, tariffMode: 'Off-Peak', note: 'เตรียมตัวเดินทางไกล' }
       ];
       const added = samples.map((s, idx) => {
         const m = calcMetrics(s.startSoc, s.endSoc, s.tariffMode);
@@ -946,12 +1160,26 @@ function doPost(e) {
         for (const item of added) {
           await postToSheet(item);
         }
+        setTimeout(() => pullFromSheet(false), 1200);
       }
     }
 
+    // --- RENDER DASHBOARD & TABLE ---
     function renderAll() {
-      document.getElementById('batBadge').textContent = `${Number(config.capacityKwh).toFixed(1)} kWh`;
-      document.getElementById('kpiKwhSub').textContent = `คิดจากแบต ${Number(config.capacityKwh).toFixed(1)} kWh + Loss ${Math.round(config.lossRate * 100)}%`;
+      const cap = Number(config.capacityKwh);
+      const lossPct = Math.round(config.lossRate * 100);
+      const flatRate = Number(config.rates['Flat'] ?? 4.40);
+
+      document.getElementById('batBadge').textContent = `${cap.toFixed(1)} kWh`;
+      document.getElementById('kpiKwhSub').textContent = `คิดจากแบต ${cap.toFixed(1)} kWh + Loss ${lossPct}%`;
+
+      // Update Hero Spec Pills
+      document.getElementById('heroSpecCap').textContent = `${cap.toFixed(1)} kWh`;
+      document.getElementById('heroSpecFlat').textContent = `฿${flatRate.toFixed(2)} / หน่วย`;
+      const est60 = cap * 0.6 * (1 + config.lossRate) * flatRate;
+      const est100 = cap * 1.0 * (1 + config.lossRate) * flatRate;
+      document.getElementById('heroSpec80').textContent = `~฿${est60.toFixed(2)}`;
+      document.getElementById('heroSpecFull').textContent = `~฿${est100.toFixed(2)}`;
 
       const monthFilter = document.getElementById('monthFilter');
       const currentFilter = monthFilter.value || 'ALL';
@@ -973,15 +1201,18 @@ function doPost(e) {
 
       document.getElementById('kpiCost').textContent = `฿${totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       document.getElementById('kpiCostSub').textContent = `ชาร์จทั้งหมด ${logs.length} ครั้ง`;
-      document.getElementById('kpiKwh').innerHTML = `${totalGrossKwh.toFixed(2)} <span class="text-sm font-normal text-slate-400">kWh</span>`;
-      document.getElementById('kpiCo2').innerHTML = `${totalCo2.toFixed(2)} <span class="text-sm font-normal text-slate-400">kg</span>`;
+      document.getElementById('kpiKwh').innerHTML = `${totalGrossKwh.toFixed(2)} <span class="text-sm font-normal text-slate-500 dark:text-slate-400">kWh</span>`;
+      document.getElementById('kpiCo2').innerHTML = `${totalCo2.toFixed(2)} <span class="text-sm font-normal text-slate-500 dark:text-slate-400">kg</span>`;
       document.getElementById('kpiTrees').textContent = `เทียบเท่าปลูกต้นไม้ ~${(totalCo2 / 21).toFixed(2)} ต้น/ปี`;
 
+      document.getElementById('chartCostTotalBadge').textContent = `รวม ฿${totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('chartCo2TotalBadge').textContent = `รวม ${totalCo2.toFixed(2)} kg`;
+
       if (avgScore !== null) {
-        document.getElementById('kpiScore').innerHTML = `${avgScore} <span class="text-sm font-normal text-slate-400">/ 100</span>`;
+        document.getElementById('kpiScore').innerHTML = `${avgScore} <span class="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>`;
         document.getElementById('kpiScoreSub').textContent = Number(avgScore) >= 85 ? 'ดูแลแบตยอดเยี่ยมมาก' : 'มีโอกาสปรับช่วงชาร์จเพิ่มได้';
       } else {
-        document.getElementById('kpiScore').innerHTML = `- <span class="text-sm font-normal text-slate-400">/ 100</span>`;
+        document.getElementById('kpiScore').innerHTML = `- <span class="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>`;
         document.getElementById('kpiScoreSub').textContent = 'ยังไม่มีข้อมูลการชาร์จ';
       }
 
@@ -989,33 +1220,33 @@ function doPost(e) {
       if (!filteredLogs.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="10" class="py-10 text-center text-slate-400">
+            <td colspan="10" class="py-10 text-center text-slate-500 dark:text-slate-400">
               ยังไม่มีข้อมูลการชาร์จใน Charge_Log — ลองกรอกฟอร์มด้านบน หรือกด "✨ เติมข้อมูลตัวอย่าง" เพื่อทดสอบได้เลย
             </td>
           </tr>`;
       } else {
         const sorted = [...filteredLogs].sort((a, b) => String(b.date).localeCompare(String(a.date)));
         tbody.innerHTML = sorted.map(item => `
-          <tr class="hover:bg-slate-800/40 transition">
-            <td class="py-3 px-3 font-medium text-white whitespace-nowrap">${escapeHtml(String(item.date))}</td>
-            <td class="py-3 px-3 text-slate-300 whitespace-nowrap">${Number(item.startSoc)}% → ${Number(item.endSoc)}%</td>
-            <td class="py-3 px-3 text-emerald-300 font-semibold whitespace-nowrap">+${Number(item.addedPct)}%</td>
-            <td class="py-3 px-3 text-cyan-300 whitespace-nowrap">${Number(item.grossKwh).toFixed(2)} kWh</td>
+          <tr class="hover:bg-slate-100/80 dark:hover:bg-slate-800/40 transition">
+            <td class="py-3 px-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">${escapeHtml(String(item.date))}</td>
+            <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${Number(item.startSoc)}% → ${Number(item.endSoc)}%</td>
+            <td class="py-3 px-3 text-emerald-600 dark:text-emerald-300 font-semibold whitespace-nowrap">+${Number(item.addedPct)}%</td>
+            <td class="py-3 px-3 text-cyan-600 dark:text-cyan-300 whitespace-nowrap">${Number(item.grossKwh).toFixed(2)} kWh</td>
             <td class="py-3 px-3 whitespace-nowrap">
-              <span class="px-2 py-0.5 rounded-full text-xs ${
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 item.tariffMode === 'Off-Peak'
-                  ? 'bg-emerald-500/15 text-emerald-300'
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                   : item.tariffMode === 'On-Peak'
-                  ? 'bg-amber-500/15 text-amber-300'
-                  : 'bg-slate-700 text-slate-300'
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                  : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'
               }">${escapeHtml(String(item.tariffMode))}</span>
             </td>
-            <td class="py-3 px-3 text-white font-semibold whitespace-nowrap">฿${Number(item.cost).toFixed(2)}</td>
-            <td class="py-3 px-3 text-lime-300 whitespace-nowrap">${Number(item.co2Saved).toFixed(2)} kg</td>
-            <td class="py-3 px-3 text-slate-200 whitespace-nowrap">${Number(item.score)}</td>
-            <td class="py-3 px-3 text-slate-400 max-w-xs truncate" title="${escapeHtml(String(item.note || ''))}">${escapeHtml(String(item.note || '-'))}</td>
+            <td class="py-3 px-3 text-slate-900 dark:text-white font-semibold whitespace-nowrap">฿${Number(item.cost).toFixed(2)}</td>
+            <td class="py-3 px-3 text-lime-600 dark:text-lime-300 whitespace-nowrap">${Number(item.co2Saved).toFixed(2)} kg</td>
+            <td class="py-3 px-3 text-slate-700 dark:text-slate-200 whitespace-nowrap">${Number(item.score)}</td>
+            <td class="py-3 px-3 text-slate-500 dark:text-slate-400 max-w-xs truncate" title="${escapeHtml(String(item.note || ''))}">${escapeHtml(String(item.note || '-'))}</td>
             <td class="py-3 px-3 text-right">
-              <button type="button" onclick="deleteLog('${escapeHtml(String(item.id))}')" class="text-rose-400 hover:text-rose-300 text-xs cursor-pointer">ลบ</button>
+              <button type="button" onclick="deleteLog('${escapeHtml(String(item.id))}')" class="text-rose-600 dark:text-rose-400 hover:underline text-xs cursor-pointer">ลบ</button>
             </td>
           </tr>
         `).join('');
@@ -1024,51 +1255,110 @@ function doPost(e) {
       renderCharts();
     }
 
+    // --- UPGRADED GRADIENT CHARTS (LIGHT + DARK ADAPTIVE) ---
     function renderCharts() {
       const monthMap = {};
       for (const item of logs) {
         const mk = item.monthKey || 'ไม่ระบุเดือน';
-        if (!monthMap[mk]) monthMap[mk] = { cost: 0, co2: 0 };
+        if (!monthMap[mk]) monthMap[mk] = { cost: 0, co2: 0, count: 0 };
         monthMap[mk].cost += Number(item.cost) || 0;
         monthMap[mk].co2 += Number(item.co2Saved) || 0;
+        monthMap[mk].count += 1;
       }
 
       const labels = Object.keys(monthMap).sort();
       const displayLabels = labels.length ? labels : ['ยังไม่มีข้อมูล'];
       const costValues = labels.length ? labels.map(m => Number(monthMap[m].cost.toFixed(2))) : [0];
       const co2Values = labels.length ? labels.map(m => Number(monthMap[m].co2.toFixed(2))) : [0];
+      const sessionCounts = labels.length ? labels.map(m => monthMap[m].count) : [0];
 
       const costCanvas = document.getElementById('costChart');
       const co2Canvas = document.getElementById('co2Chart');
       if (!costCanvas || !co2Canvas || typeof Chart === 'undefined') return;
 
+      const dark = isDarkMode();
+      const tickColor = dark ? '#94a3b8' : '#475569';
+      const gridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(15, 23, 42, 0.08)';
+      const tooltipBg = dark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)';
+      const tooltipText = dark ? '#f8fafc' : '#0f172a';
+      const tooltipBorder = dark ? 'rgba(52, 211, 153, 0.35)' : 'rgba(16, 185, 129, 0.35)';
+
+      // 1. Gradient Monthly Cost Bar Chart
       const costCtx = costCanvas.getContext('2d');
+      const barGradient = costCtx.createLinearGradient(0, 0, 0, 260);
+      barGradient.addColorStop(0, dark ? 'rgba(52, 211, 153, 0.92)' : 'rgba(16, 185, 129, 0.9)');
+      barGradient.addColorStop(0.65, dark ? 'rgba(20, 184, 166, 0.65)' : 'rgba(20, 184, 166, 0.65)');
+      barGradient.addColorStop(1, dark ? 'rgba(6, 182, 212, 0.25)' : 'rgba(6, 182, 212, 0.25)');
+
       if (costChartInstance) costChartInstance.destroy();
       costChartInstance = new Chart(costCtx, {
         type: 'bar',
         data: {
           labels: displayLabels,
           datasets: [{
-            label: 'ค่าไฟ (บาท)',
+            label: 'ค่าไฟบ้าน (บาท)',
             data: costValues,
-            backgroundColor: 'rgba(16, 185, 129, 0.65)',
-            borderColor: 'rgb(52, 211, 153)',
+            backgroundColor: barGradient,
+            hoverBackgroundColor: dark ? 'rgba(52, 211, 153, 1)' : 'rgba(16, 185, 129, 1)',
+            borderColor: dark ? '#34d399' : '#10b981',
             borderWidth: 1.5,
-            borderRadius: 8
+            borderRadius: { topLeft: 12, topRight: 12, bottomLeft: 4, bottomRight: 4 },
+            borderSkipped: false,
+            maxBarThickness: 46
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: tooltipBg,
+              titleColor: tooltipText,
+              bodyColor: tooltipText,
+              borderColor: tooltipBorder,
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 12,
+              displayColors: false,
+              callbacks: {
+                label: (ctx) => {
+                  const idx = ctx.dataIndex;
+                  const count = sessionCounts[idx] || 0;
+                  return [
+                    `💸 ค่าไฟรวม: ฿${Number(ctx.parsed.y).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`,
+                    `🔌 จำนวนรอบชาร์จ: ${count} ครั้ง`
+                  ];
+                }
+              }
+            }
+          },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } },
-            y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } }
+            x: {
+              ticks: { color: tickColor, font: { family: 'Prompt', size: 12 } },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: tickColor,
+                font: { family: 'Inter', size: 11 },
+                callback: (val) => `฿${val}`
+              },
+              grid: { color: gridColor, borderDash: [4, 4] }
+            }
           }
         }
       });
 
+      // 2. Smooth Area CO2 Saved Chart
       const co2Ctx = co2Canvas.getContext('2d');
+      const areaGradient = co2Ctx.createLinearGradient(0, 0, 0, 260);
+      areaGradient.addColorStop(0, dark ? 'rgba(56, 189, 248, 0.42)' : 'rgba(14, 165, 233, 0.32)');
+      areaGradient.addColorStop(0.7, dark ? 'rgba(16, 185, 129, 0.14)' : 'rgba(16, 185, 129, 0.1)');
+      areaGradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
       if (co2ChartInstance) co2ChartInstance.destroy();
       co2ChartInstance = new Chart(co2Ctx, {
         type: 'line',
@@ -1077,26 +1367,65 @@ function doPost(e) {
           datasets: [{
             label: 'ลด CO₂ (kg)',
             data: co2Values,
-            borderColor: 'rgb(56, 189, 248)',
-            backgroundColor: 'rgba(56, 189, 248, 0.2)',
-            tension: 0.35,
+            borderColor: dark ? '#38bdf8' : '#0284c7',
+            borderWidth: 3,
+            backgroundColor: areaGradient,
+            tension: 0.42,
             fill: true,
-            pointRadius: 4,
-            pointBackgroundColor: 'rgb(56, 189, 248)'
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointBackgroundColor: dark ? '#34d399' : '#10b981',
+            pointBorderColor: dark ? '#0f172a' : '#ffffff',
+            pointBorderWidth: 2
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: tooltipBg,
+              titleColor: tooltipText,
+              bodyColor: tooltipText,
+              borderColor: dark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(2, 132, 199, 0.35)',
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 12,
+              displayColors: false,
+              callbacks: {
+                label: (ctx) => {
+                  const kg = Number(ctx.parsed.y);
+                  const trees = (kg / 21).toFixed(2);
+                  return [
+                    `🌿 ลด CO₂ ได้: ${kg.toFixed(2)} kg`,
+                    `🌳 เทียบเท่าปลูกต้นไม้ ~${trees} ต้น/ปี`
+                  ];
+                }
+              }
+            }
+          },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } },
-            y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } }
+            x: {
+              ticks: { color: tickColor, font: { family: 'Prompt', size: 12 } },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: tickColor,
+                font: { family: 'Inter', size: 11 },
+                callback: (val) => `${val} kg`
+              },
+              grid: { color: gridColor, borderDash: [4, 4] }
+            }
           }
         }
       });
     }
 
+    // --- BATTERY CARE TIPS ---
     function renderTip() {
       const t = BATTERY_TIPS[tipIndex % BATTERY_TIPS.length];
       document.getElementById('tipCategory').textContent = t.cat;
@@ -1118,11 +1447,12 @@ function doPost(e) {
       renderTip();
     }
 
+    // --- CSV EXPORT ---
     function exportCSV() {
-      const headers = ['id', 'date', 'monthKey', 'startSoc', 'endSoc', 'addedPct', 'netKwh', 'grossKwh', 'tariffMode', 'cost', 'co2Saved', 'score', 'note'];
+      const headers = ['date', 'startSoc', 'endSoc', 'addedPct', 'netKwh', 'grossKwh', 'tariffMode', 'cost', 'co2Saved', 'score', 'monthKey', 'note'];
       const rows = logs.map(l => [
-        l.id, l.date, l.monthKey, l.startSoc, l.endSoc, l.addedPct,
-        l.netKwh, l.grossKwh, l.tariffMode, l.cost, l.co2Saved, l.score,
+        l.date, l.startSoc, l.endSoc, l.addedPct,
+        l.netKwh, l.grossKwh, l.tariffMode, l.cost, l.co2Saved, l.score, l.monthKey,
         `"${String(l.note || '').replace(/"/g, '""')}"`
       ]);
       const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -1138,16 +1468,18 @@ function doPost(e) {
       showToast('ส่งออกไฟล์ CSV (UTF-8 BOM) แล้วครับ', 'success');
     }
 
+    // --- MODALS & SETTINGS ---
     function openModal(id) {
       if (id === 'settingsModal') {
         document.getElementById('cfgCapacity').value = config.capacityKwh;
         document.getElementById('cfgLossPct').value = Math.round(config.lossRate * 100);
-        document.getElementById('cfgOffPeak').value = config.rates['Off-Peak'];
         document.getElementById('cfgFlat').value = config.rates['Flat'];
+        document.getElementById('cfgOffPeak').value = config.rates['Off-Peak'];
         document.getElementById('cfgOnPeak').value = config.rates['On-Peak'];
         document.getElementById('cfgCo2Factor').value = config.co2Factor;
+        document.getElementById('cfgDriveImgId').value = config.driveImgId || DEFAULT_DRIVE_IMG_ID;
       } else if (id === 'syncModal') {
-        document.getElementById('cfgWebhookUrl').value = config.webhookUrl || '';
+        document.getElementById('cfgWebhookUrl').value = config.webhookUrl || DEFAULT_WEBHOOK_URL;
       }
       document.getElementById(id).classList.remove('hidden');
     }
@@ -1159,23 +1491,26 @@ function doPost(e) {
     function saveSettings() {
       const cap = Number(document.getElementById('cfgCapacity').value);
       const lossPct = Number(document.getElementById('cfgLossPct').value);
-      const offPeak = Number(document.getElementById('cfgOffPeak').value);
       const flat = Number(document.getElementById('cfgFlat').value);
+      const offPeak = Number(document.getElementById('cfgOffPeak').value);
       const onPeak = Number(document.getElementById('cfgOnPeak').value);
       const co2Factor = Number(document.getElementById('cfgCo2Factor').value);
+      const driveImgId = document.getElementById('cfgDriveImgId').value.trim();
 
       if (cap > 0) config.capacityKwh = cap;
       if (lossPct >= 0) config.lossRate = lossPct / 100;
-      if (offPeak >= 0) config.rates['Off-Peak'] = offPeak;
       if (flat >= 0) config.rates['Flat'] = flat;
+      if (offPeak >= 0) config.rates['Off-Peak'] = offPeak;
       if (onPeak >= 0) config.rates['On-Peak'] = onPeak;
       if (co2Factor >= 0) config.co2Factor = co2Factor;
+      if (driveImgId) config.driveImgId = driveImgId;
 
       saveConfigToStorage();
+      applyHeroImage();
       closeModal('settingsModal');
       updateLivePreview();
       renderAll();
-      showToast('บันทึกการตั้งค่ารถและเรทไฟแล้วครับ', 'success');
+      showToast('บันทึกการตั้งค่าเรียบร้อยแล้วครับ', 'success');
     }
 
     async function saveWebhookAndSync() {
@@ -1213,7 +1548,10 @@ function doPost(e) {
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      applyHeroImage();
       document.getElementById('chargeDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('tariffMode').value = config.defaultTariff || 'Flat';
       renderTip();
       updateLivePreview();
       renderAll();
